@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software Design Principles – Handwritten Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #c8c8c8;
+    font-family: 'Caveat', cursive;
+    padding: 40px 20px 60px;
+    min-height: 100vh;
+  }
+
+  .page {
+    background: #fdf9ec;
+    width: 780px;
+    max-width: 100%;
+    margin: 0 auto 50px;
+    padding: 60px 70px 80px 100px;
+    position: relative;
+    border-radius: 2px;
+    box-shadow: 3px 3px 12px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  /* Notebook lines */
+  .page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 35px,
+      #c9d8e8 35px,
+      #c9d8e8 36px
+    );
+    background-position: 0 55px;
+    pointer-events: none;
+    border-radius: 2px;
+  }
+
+  /* Red margin line */
+  .page::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 80px;
+    width: 2px;
+    background: rgba(220, 80, 80, 0.45);
+    pointer-events: none;
+  }
+
+  /* Hole punches */
+  .holes {
+    position: absolute;
+    left: -18px;
+    top: 0; bottom: 0;
+    width: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 60px 0;
+  }
+  .hole {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #c8c8c8;
+    border: 2px solid #b0b0b0;
+  }
+
+  /* Page number tab */
+  .page-tab {
+    position: absolute;
+    top: 20px; right: -2px;
+    background: #e8d5a3;
+    border-radius: 3px 0 0 3px;
+    padding: 4px 10px;
+    font-size: 14px;
+    color: #7a6030;
+    border: 1px solid #c9b87a;
+    border-right: none;
+  }
+
+  h1 {
+    font-size: 34px;
+    font-weight: 700;
+    color: #1a2a5e;
+    margin-bottom: 8px;
+    line-height: 1.2;
+    text-decoration: underline;
+    text-decoration-color: #3a5ab0;
+    text-underline-offset: 4px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 30px;
+    font-weight: 400;
+  }
+
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a2a5e;
+    margin: 38px 0 10px;
+    position: relative;
+    display: inline-block;
+  }
+
+  h2 .num {
+    display: inline-block;
+    background: #3a5ab0;
+    color: #fff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    font-size: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  h3 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #2d4a8a;
+    margin: 22px 0 6px;
+    border-bottom: 1.5px dashed #aabce8;
+    padding-bottom: 2px;
+    display: inline-block;
+  }
+
+  p {
+    font-size: 19px;
+    color: #2a2a2a;
+    line-height: 36px;
+    margin-bottom: 4px;
+  }
+
+  .highlight {
+    background: linear-gradient(120deg, rgba(255,230,80,0.55) 0%, rgba(255,230,80,0.55) 100%);
+    padding: 0 3px;
+    border-radius: 2px;
+  }
+
+  .highlight-pink {
+    background: linear-gradient(120deg, rgba(255,150,180,0.35) 0%, rgba(255,150,180,0.35) 100%);
+    padding: 0 3px;
+    border-radius: 2px;
+  }
+
+  .highlight-green {
+    background: linear-gradient(120deg, rgba(130,220,150,0.45) 0%, rgba(130,220,150,0.45) 100%);
+    padding: 0 3px;
+    border-radius: 2px;
+  }
+
+  ul {
+    margin: 4px 0 6px 20px;
+    list-style: none;
+  }
+
+  ul li {
+    font-size: 19px;
+    color: #2a2a2a;
+    line-height: 36px;
+    padding-left: 22px;
+    position: relative;
+  }
+
+  ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #3a5ab0;
+    font-weight: 600;
+  }
+
+  ul.bullets li::before { content: '•'; color: #c05030; font-size: 22px; top: -1px; }
+  ul.check li::before { content: '✓'; color: #1a8a4a; }
+  ul.cross li::before { content: '✗'; color: #c03030; }
+  ul.star li::before { content: '★'; color: #c07020; font-size: 16px; }
+
+  .box {
+    border: 2px solid #3a5ab0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    background: rgba(200,215,255,0.15);
+    position: relative;
+  }
+
+  .box-label {
+    position: absolute;
+    top: -13px; left: 14px;
+    background: #fdf9ec;
+    padding: 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #3a5ab0;
+    letter-spacing: 0.5px;
+  }
+
+  .bad-box {
+    border: 2px solid #c03030;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    background: rgba(255,200,200,0.12);
+    position: relative;
+  }
+
+  .bad-box .box-label { color: #c03030; }
+
+  .good-box {
+    border: 2px solid #1a8a4a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    background: rgba(180,240,200,0.12);
+    position: relative;
+  }
+
+  .good-box .box-label { color: #1a8a4a; }
+
+  .code-block {
+    font-family: 'Caveat', cursive;
+    background: rgba(40,40,60,0.07);
+    border-left: 3px solid #3a5ab0;
+    padding: 10px 16px;
+    margin: 8px 0 8px 10px;
+    border-radius: 0 6px 6px 0;
+    font-size: 17px;
+    color: #1a1a3a;
+    line-height: 32px;
+  }
+
+  .code-block .kw { color: #2255bb; font-weight: 600; }
+  .code-block .fn { color: #1a7a3a; }
+  .code-block .cmt { color: #888; font-style: italic; }
+  .code-block .str { color: #bb3322; }
+
+  .note-tag {
+    display: inline-block;
+    background: #ffd700;
+    color: #5a3a00;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    transform: rotate(-1deg);
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .warning-tag {
+    display: inline-block;
+    background: #ff8c42;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    transform: rotate(0.5deg);
+  }
+
+  .arrow-note {
+    color: #c03030;
+    font-size: 21px;
+    font-weight: 600;
+    margin: 2px 0;
+    padding-left: 16px;
+  }
+
+  .arrow-note::before {
+    content: '↳ ';
+    font-weight: 700;
+  }
+
+  .divider {
+    border: none;
+    border-top: 2px dashed #c9b87a;
+    margin: 30px 0;
+  }
+
+  .section-intro {
+    font-size: 19px;
+    color: #333;
+    line-height: 36px;
+    border-left: 3px solid #c9b87a;
+    padding-left: 14px;
+    margin-bottom: 14px;
+  }
+
+  .important {
+    font-size: 21px;
+    font-weight: 700;
+    color: #c03030;
+    text-decoration: underline wavy #c03030;
+    text-underline-offset: 3px;
+  }
+
+  .sticky {
+    background: #fff9b0;
+    border: 1px solid #e8d870;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 18px 0;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+    transform: rotate(-0.8deg);
+    font-size: 18px;
+    color: #4a3a00;
+    line-height: 32px;
+  }
+
+  .sticky.blue {
+    background: #d0eeff;
+    border-color: #80c0f0;
+    color: #0a2a50;
+    transform: rotate(0.5deg);
+  }
+
+  .sub-ul {
+    margin-left: 28px !important;
+  }
+
+  .sub-ul li::before { content: '↳'; color: #888; }
+
+  .badge {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .badge.imp { background: #ffe0e0; color: #c03030; }
+  .badge.note { background: #e0e8ff; color: #2a4aaa; }
+  .badge.tip { background: #e0ffe0; color: #1a7a3a; }
+
+  .page-title-bar {
+    background: #2d4a8a;
+    color: #fff;
+    margin: -60px -70px 40px -100px;
+    padding: 16px 70px 16px 100px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .col-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 10px 0;
+  }
+
+  .col-2 .mini-box {
+    border: 1.5px solid #aabce8;
+    border-radius: 6px;
+    padding: 10px 14px;
+    background: rgba(200,215,255,0.12);
+  }
+
+  .mini-box-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #3a5ab0;
+    margin-bottom: 4px;
+  }
+
+  .mini-box p { font-size: 17px; line-height: 32px; }
+</style>
+</head>
+<body>
+
+<!-- ========== PAGE 1 ========== -->
+<div class="page">
+  <div class="holes"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+  <div class="page-tab">Pg. 1</div>
+  <div class="page-title-bar">TUF 2026 – Software Design Principles</div>
+
+  <h1>Software Design Principles</h1>
+  <p class="subtitle">Theory Notes – April 2026</p>
+
+  <p class="section-intro">
+    Software design principles are guidelines that help developers create systems that are
+    <span class="highlight">easy to understand, maintain, and extend</span>. They can be applied
+    at both the <span class="highlight-pink">high-level</span> and
+    <span class="highlight-green">low-level</span> design stages.
+  </p>
+
+  <p>Three cornerstone principles:</p>
+  <ul class="bullets">
+    <li><span class="highlight">DRY</span> – Don't Repeat Yourself</li>
+    <li><span class="highlight-pink">KISS</span> – Keep It Simple, Stupid</li>
+    <li><span class="highlight-green">YAGNI</span> – You Aren't Gonna Need It</li>
+  </ul>
+
+  <hr class="divider">
+
+  <!-- ===== DRY ===== -->
+  <h2><span class="num">1</span> DRY: Don't Repeat Yourself</h2>
+
+  <p>
+    Every piece of knowledge must have a <span class="highlight">single, unambiguous,
+    authoritative representation</span> within a system.
+  </p>
+  <p>
+    In simple terms → <em>avoid duplication of logic or code</em>. Repeating logic
+    makes the system hard to maintain and error-prone.
+  </p>
+  <p class="arrow-note">If a change is required, you might forget to update all occurrences!</p>
+
+  <h3>Importance</h3>
+  <ul class="check">
+    <li>Reduces redundancy</li>
+    <li>Easier maintenance</li>
+    <li>Single point of change</li>
+  </ul>
+
+  <h3>Example – Bad Code (Violates DRY)</h3>
+
+  <div class="bad-box">
+    <span class="box-label">✗ Bad – Duplicated Logic</span>
+    <div class="code-block">
+      <span class="kw">void</span> <span class="fn">printArea1</span>(w, h) {<br>
+      &nbsp;&nbsp;<span class="kw">int</span> area = h * w;<br>
+      &nbsp;&nbsp;cout &lt;&lt; <span class="str">"Total = "</span> &lt;&lt; area &lt;&lt; endl;<br>
+      }<br>
+      <span class="kw">void</span> <span class="fn">printArea2</span>(w, h) {<br>
+      &nbsp;&nbsp;<span class="kw">int</span> area = h * w; <span class="cmt">← same logic repeated!</span><br>
+      &nbsp;&nbsp;cout &lt;&lt; <span class="str">"Total = "</span> &lt;&lt; area &lt;&lt; endl;<br>
+      }
+    </div>
+  </div>
+
+  <p>The logic for calculating area is <span class="important">repeated in both methods</span>. Need to change the formula? → Must update in multiple places!</p>
+</div>
+
+<!-- ========== PAGE 2 ========== -->
+<div class="page">
+  <div class="holes"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+  <div class="page-tab">Pg. 2</div>
+  <div class="page-title-bar">DRY (continued)</div>
+
+  <h3>Refactored Code – Following DRY</h3>
+
+  <div class="good-box">
+    <span class="box-label">✓ Good – DRY Principle Applied</span>
+    <div class="code-block">
+      <span class="kw">class</span> <span class="fn">AreaCalculator</span> {<br>
+      &nbsp;&nbsp;<span class="kw">int</span> <span class="fn">calculateArea</span>(length, width) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> length * width; <span class="cmt">← single source!</span><br>
+      &nbsp;&nbsp;}<br>
+      }<br><br>
+      <span class="cmt">// In main():</span><br>
+      area1 = AreaCalculator.<span class="fn">calculateArea</span>(10, 5);<br>
+      area2 = AreaCalculator.<span class="fn">calculateArea</span>(8, 4);
+    </div>
+  </div>
+
+  <p>Now if we need to change the formula, we only need to do it <span class="highlight">in ONE place</span>. ✓</p>
+
+  <h3>Applying DRY in Practice</h3>
+  <ul>
+    <li>Identify repetitive code → replace with a single, reusable code segment</li>
+    <li>Extract common functionality into utility classes</li>
+    <li>Leverage libraries and frameworks when available</li>
+    <li>Refactor duplicate logic regularly across classes or layers</li>
+  </ul>
+
+  <h3>When NOT to Use DRY <span class="badge imp">Important!</span></h3>
+
+  <div class="box">
+    <span class="box-label">⚠ Caution</span>
+    <ul class="bullets">
+      <li><span class="highlight-pink">Premature Abstraction</span> – Don't extract common code too early. Two code blocks might look similar but could change differently later. Extracting them into a shared method can create <em>unnecessary coupling between unrelated parts</em>.</li>
+      <li><span class="highlight-pink">Performance-Critical Code</span> – Don't apply DRY to performance-sensitive code if it causes inefficiency. Sometimes, repeating optimised low-level logic is faster than calling a generalised, reusable method. Function calls, indirection, or generic wrappers might <em>reduce performance or block compiler optimisations</em> like inlining.</li>
+      <li><span class="highlight-pink">Sacrificing Readability</span> – If separating repeated logic makes the code less readable, prefer clarity over DRY-ness.</li>
+      <li><span class="highlight-pink">Legacy Codebases</span> – Don't refactor for DRY's sake in legacy code unless necessary and well-tested. Introducing DRY by extracting shared logic can accidentally change behaviour.</li>
+      <li><span class="highlight-pink">Legacy code safety</span> – Often follows the "leave it alone unless you must touch it" rule.</li>
+    </ul>
+  </div>
+
+  <div class="sticky">
+    💡 <strong>Key Rule:</strong> DRY doesn't mean "never write similar-looking code" – it means
+    don't duplicate <em>knowledge</em> or <em>business logic</em> without reason.
+  </div>
+</div>
+
+<!-- ========== PAGE 3 ========== -->
+<div class="page">
+  <div class="holes"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+  <div class="page-tab">Pg. 3</div>
+  <div class="page-title-bar">KISS – Keep It Simple, Stupid</div>
+
+  <h2><span class="num">2</span> KISS: Keep It Simple, Stupid</h2>
+
+  <p>
+    Simplicity should be a key goal in design and <span class="highlight">unnecessary
+    complexity should be avoided</span>. Use the simplest possible solution that works.
+    <em>Avoid clever, convoluted code.</em>
+  </p>
+
+  <h3>Importance</h3>
+  <ul class="check">
+    <li>Easier debugging</li>
+    <li>Improved readability</li>
+    <li>Better maintainability</li>
+    <li>Faster development</li>
+  </ul>
+
+  <h3>Example</h3>
+  <p>Writing a piece of code to check if a number is even or odd:</p>
+
+  <div class="bad-box">
+    <span class="box-label">✗ Bad Code – Too Complex</span>
+    <div class="code-block">
+      <span class="kw">class</span> <span class="fn">NumberChecker</span> {<br>
+      &nbsp;&nbsp;<span class="kw">static bool</span> <span class="fn">isEven</span>(number) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (number &lt; 0) { number = -number; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (number % 2 == 0) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;isEven = <span class="kw">true</span>;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;} <span class="kw">else</span> {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;isEven = <span class="kw">false</span>;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> isEven;<br>
+      &nbsp;&nbsp;}<br>
+      }
+    </div>
+  </div>
+
+  <p>The above code is bad because it:</p>
+  <ul class="cross">
+    <li>Uses extra variables</li>
+    <li>Adds unnecessary if-else logic</li>
+    <li>Makes the code longer and harder to follow</li>
+  </ul>
+
+  <div class="good-box">
+    <span class="box-label">✓ Good Code – Simple & Clear</span>
+    <div class="code-block">
+      <span class="kw">class</span> <span class="fn">NumberChecker</span> {<br>
+      &nbsp;&nbsp;<span class="kw">static bool</span> <span class="fn">isEven</span>(number) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> number % 2 == 0;<br>
+      &nbsp;&nbsp;}<br>
+      }
+    </div>
+  </div>
+
+  <p>The above code is good because it is:</p>
+  <ul class="check">
+    <li>Simple, one-line solution</li>
+    <li>Easy to read and understand</li>
+    <li>Follows the DRY principle by avoiding over-engineering</li>
+  </ul>
+
+  <div class="sticky blue">
+    🔑 <strong>Remember:</strong> "Make it work, make it right, make it fast" – but keep it
+    simple at every step. Complex code is a <em>liability</em>, not an asset!
+  </div>
+</div>
+
+<!-- ========== PAGE 4 ========== -->
+<div class="page">
+  <div class="holes"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+  <div class="page-tab">Pg. 4</div>
+  <div class="page-title-bar">YAGNI – You Aren't Gonna Need It</div>
+
+  <h2><span class="num">3</span> YAGNI: You Aren't Gonna Need It</h2>
+
+  <p>
+    <span class="highlight">"Always implement things when you actually need them, never
+    when you just foresee that you need them."</span>
+  </p>
+  <p>
+    In simple terms → don't add functionality until it's necessary. Avoid building
+    things you <em>think</em> you might need. Helps keep the codebase clean and removes
+    unnecessary complexity.
+  </p>
+
+  <h3>Example Scenario</h3>
+
+  <div class="box">
+    <span class="box-label">Scenario</span>
+    <p>
+      Suppose you've been asked to build a note-taking app that allows users to create and
+      edit notes. You start thinking about: <em>"What if they want categories? Or tagging?
+      Or syncing with Google Drive?"</em>
+    </p>
+    <p class="arrow-note">This creates a lot of unnecessary complexity before it's even needed!</p>
+  </div>
+
+  <h3>Importance</h3>
+  <ul class="check">
+    <li>Reduced complexity</li>
+    <li>Simplified codebase</li>
+    <li>Faster development</li>
+  </ul>
+
+  <h3>When NOT to Use YAGNI <span class="badge imp">Important!</span></h3>
+
+  <ul>
+    <li>
+      <span class="highlight-pink">When the requirements are well-known</span> – if a feature is
+      guaranteed and easy to implement, preparing for it now might be more efficient.
+      <ul class="sub-ul">
+        <li>e.g., You're building a messaging service that currently supports only text, but your product team has committed to supporting attachments in Q3. Handling attachments now might make sense here.</li>
+      </ul>
+    </li>
+    <li>
+      <span class="highlight-pink">Performance-Critical Areas</span> – in systems where performance
+      is a first-class concern, resisting YAGNI might actually help. Proactively profiling and testing
+      real-world usage patterns can catch bottlenecks early.
+    </li>
+  </ul>
+
+  <div class="sticky">
+    ⚠️ <strong>Don't over-YAGNI:</strong> When requirements are known and clear, it's okay to build
+    ahead. YAGNI is about avoiding <em>speculative</em> features, not refusing to plan!
+  </div>
+
+  <hr class="divider">
+
+  <div class="col-2">
+    <div class="mini-box">
+      <div class="mini-box-title">🔵 DRY says…</div>
+      <p>Don't duplicate knowledge or logic. Single source of truth.</p>
+    </div>
+    <div class="mini-box">
+      <div class="mini-box-title">🟠 KISS says…</div>
+      <p>Keep it simple. Avoid unnecessary complexity. Clarity &gt; cleverness.</p>
+    </div>
+  </div>
+  <div style="max-width: 360px; margin: 12px auto 0;">
+    <div class="mini-box">
+      <div class="mini-box-title" style="color: #1a8a4a;">🟢 YAGNI says…</div>
+      <p>Don't build what you don't need yet. Implement only when necessary.</p>
+    </div>
+  </div>
+
+  <div class="sticky blue" style="margin-top: 30px; transform: rotate(0deg);">
+    💬 <strong>Together these three principles help create codebases that are:</strong><br>
+    clean, maintainable, scalable, and easy to reason about. Master these → write better software! ✓
+  </div>
+
+  <p style="text-align: right; font-size: 15px; color: #999; margin-top: 30px;">
+    – End of Notes – TUF 2026
+  </p>
+</div>
+
+</body>
+</html>
